@@ -1,0 +1,11 @@
+[api.app]
+key = "my-twitter-app-key"
+secret = "my-twitter-app-secret"
+
+[api.user]
+token = "my-twitter-user-token"
+token_secret = "my-twitter-user-secret"
+display_name = "my-twitter-display-name"
+
+[app]
+delete_days = 15
