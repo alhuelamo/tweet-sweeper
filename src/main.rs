@@ -1,6 +1,7 @@
 use std::process;
 
-use tweet_sweeper::config;
+use egg_mode::error::Error;
+use tweet_sweeper::{config, report::Report};
 
 use env_logger;
 
@@ -12,11 +13,21 @@ fn main() {
         process::exit(1);
     });
 
-    if let Err(egg_error) = tweet_sweeper::run(&config) {
-        log::error!("Something went wrong...");
-        log::error!("{}", egg_error);
-        process::exit(0);
+    match tweet_sweeper::run(config) {
+        Ok(report) => process_success(report),
+        Err(egg_error) => process_error(egg_error),
     }
 
     log::info!("DONE!");
+}
+
+fn process_success(report: Report) {
+    let n_removed = report.get_number_of_removed_tweets();
+    log::info!("Successfully removed {} tweets!", n_removed);
+}
+
+fn process_error(egg_error: Error) {
+    log::error!("Something went wrong...");
+    log::error!("{}", egg_error);
+    process::exit(1);
 }

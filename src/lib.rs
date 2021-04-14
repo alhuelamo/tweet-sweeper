@@ -2,6 +2,7 @@ use chrono::Duration;
 use chrono::prelude::*;
 use egg_mode;
 use egg_mode::error::Result;
+use report::Report;
 use tokio::runtime::Runtime;
 
 use api::TwitterApi;
@@ -9,8 +10,9 @@ use egg_mode::tweet::Tweet;
 
 pub mod api;
 pub mod config;
+pub mod report;
 
-pub fn run(config: &config::Config) -> Result<()> {
+pub fn run(config: config::Config) -> Result<Report> {
     let mut rt = Runtime::new()
         .expect("Failed to create Tokio runtime");
 
@@ -21,9 +23,10 @@ pub fn run(config: &config::Config) -> Result<()> {
     rt.block_on(delete_older_tweets(client, delete_date))
 }
 
-async fn delete_older_tweets(api: TwitterApi, delete_date: DateTime<Utc>) -> Result<()> {
+async fn delete_older_tweets(api: TwitterApi, delete_date: DateTime<Utc>) -> Result<Report> {
     let mut timeline = api.get_initial_timeline();
     timeline.reset();
+    let mut total_removed: u32 = 0;
 
     while {
         let tl = timeline.older(None).await.unwrap();
@@ -34,13 +37,14 @@ async fn delete_older_tweets(api: TwitterApi, delete_date: DateTime<Utc>) -> Res
 
         let removed = process_feed(&api, &feed, &delete_date).await?;
         log::debug!("Removed {} tweets", removed);
+        total_removed += removed as u32;
 
         log::debug!("!feed.is_empty() = {}", !feed.is_empty());
         !feed.is_empty()
     } {}
     log::debug!("END");
 
-    Ok(())
+    Ok(Report::new(total_removed))
 }
 
 async fn process_feed(api: &TwitterApi, feed: &Vec<Tweet>, delete_date: &DateTime<Utc>) -> Result<usize> {
