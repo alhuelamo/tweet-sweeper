@@ -23,6 +23,3 @@ export OPENSSL_LIB_DIR=/tmp/openssl-1.1.1k/
 export OPENSSL_INCLUDE_DIR=/tmp/openssl-1.1.1k/include
 
 cd $DIR
-
-# Build project
-cargo build --release --target=aarch64-unknown-linux-gnu
