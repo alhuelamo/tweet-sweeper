@@ -22,8 +22,10 @@ fn main() {
 }
 
 fn process_success(report: Report) {
-    let n_removed = report.get_number_of_removed_tweets();
-    log::info!("Successfully removed {} tweets!", n_removed);
+    match report.get_number_of_removed_tweets() {
+        0 => log::info!("No tweets removed!"),
+        n_removed => log::info!("Successfully removed {} tweets!", n_removed),
+    }
 }
 
 fn process_error(egg_error: Error) {
