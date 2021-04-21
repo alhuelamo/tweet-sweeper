@@ -18,21 +18,21 @@ pub struct ApiUser {
 }
 
 #[derive(Deserialize, PartialEq, Debug)]
-pub struct ApiConfig {
+pub struct ApiConf {
     pub app: ApiSecrets,
     pub user: ApiUser,
 }
 
 #[derive(Deserialize, PartialEq, Debug)]
-pub struct AppConfig {
+pub struct AppConf {
     pub delete_days: i64,
     pub ignore_liked_by_me: bool,
 }
 
 #[derive(Deserialize, PartialEq, Debug)]
 pub struct Config {
-    pub api: ApiConfig,
-    pub app: AppConfig,
+    pub api: ApiConf,
+    pub app: AppConf,
 }
 
 pub fn load_default_configuration() -> io::Result<Config> {
@@ -74,7 +74,7 @@ ignore_liked_by_me = true
 ";
         let actual: Config = toml::from_str(&config).unwrap();
         let expected = Config {
-            api: ApiConfig {
+            api: ApiConf {
                 app: ApiSecrets {
                     key: String::from("my_key"),
                     secret: String::from("my_secret"),
@@ -85,7 +85,7 @@ ignore_liked_by_me = true
                     display_name: String::from("alhuelamo"),
                 },
             },
-            app: AppConfig {
+            app: AppConf {
                 delete_days: 15,
                 ignore_liked_by_me: true,
             }
