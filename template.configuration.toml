@@ -9,3 +9,4 @@ display_name = "my-twitter-display-name"
 
 [app]
 delete_days = 15
+ignore_liked_by_me = true

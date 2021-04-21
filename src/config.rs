@@ -26,6 +26,7 @@ pub struct ApiConfig {
 #[derive(Deserialize, PartialEq, Debug)]
 pub struct AppConfig {
     pub delete_days: i64,
+    pub ignore_liked_by_me: bool,
 }
 
 #[derive(Deserialize, PartialEq, Debug)]
@@ -69,6 +70,7 @@ display_name = \"alhuelamo\"
 
 [app]
 delete_days = 15
+ignore_liked_by_me = true
 ";
         let actual: Config = toml::from_str(&config).unwrap();
         let expected = Config {
@@ -84,7 +86,8 @@ delete_days = 15
                 },
             },
             app: AppConfig {
-                delete_days: 15
+                delete_days: 15,
+                ignore_liked_by_me: true,
             }
         };
         assert_eq!(actual, expected);
