@@ -1,6 +1,6 @@
 [package]
 name = "tweet-sweeper"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["alhuelamo <alhuelamo+git@icloud.com>"]
 edition = "2018"
 

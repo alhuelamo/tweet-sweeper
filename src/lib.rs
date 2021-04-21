@@ -1,7 +1,9 @@
+use std::process;
+
 use chrono::Duration;
 use chrono::prelude::*;
 use egg_mode;
-use egg_mode::error::Result;
+use egg_mode::error::{Error, Result};
 use report::Report;
 use tokio::runtime::Runtime;
 
@@ -12,7 +14,7 @@ pub mod api;
 pub mod config;
 pub mod report;
 
-pub fn run(config: config::Config) -> Result<Report> {
+pub fn run(config: config::Config) {
     let mut rt = Runtime::new()
         .expect("Failed to create Tokio runtime");
 
@@ -20,7 +22,10 @@ pub fn run(config: config::Config) -> Result<Report> {
 
     let delete_date = Utc::now() - Duration::days(config.app.delete_days);
 
-    rt.block_on(delete_older_tweets(client, delete_date))
+    match rt.block_on(delete_older_tweets(client, delete_date)) {
+        Ok(report) => good_ending(report),
+        Err(egg_error) => bad_ending(egg_error),
+    }
 }
 
 async fn delete_older_tweets(api: TwitterApi, delete_date: DateTime<Utc>) -> Result<Report> {
@@ -60,3 +65,15 @@ async fn process_feed(api: &TwitterApi, feed: &Vec<Tweet>, delete_date: &DateTim
     Ok(count)
 }
 
+fn good_ending(report: Report) {
+    match report.get_number_of_removed_tweets() {
+        0 => log::info!("No tweets removed!"),
+        n_removed => log::info!("Successfully removed {} tweets!", n_removed),
+    }
+}
+
+fn bad_ending(egg_error: Error) {
+    log::error!("Something went wrong...");
+    log::error!("{}", egg_error);
+    process::exit(1);
+}
