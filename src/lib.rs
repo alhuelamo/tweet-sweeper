@@ -2,6 +2,7 @@ use std::process;
 
 use chrono::Duration;
 use chrono::prelude::*;
+use config::AppConf;
 use egg_mode;
 use egg_mode::error::{Error, Result};
 use report::Report;
@@ -20,16 +21,16 @@ pub fn run(config: config::Config) {
 
     let client = TwitterApi::new(&config);
 
-    let delete_date = Utc::now() - Duration::days(config.app.delete_days);
-
-    match rt.block_on(delete_older_tweets(client, delete_date)) {
+    match rt.block_on(delete_older_tweets(client, &config.app)) {
         Ok(report) => good_ending(report),
         Err(egg_error) => bad_ending(egg_error),
     }
 }
 
-async fn delete_older_tweets(api: TwitterApi, delete_date: DateTime<Utc>) -> Result<Report> {
-    let mut timeline = api.get_initial_timeline();
+async fn delete_older_tweets(api_client: TwitterApi, app_conf: &AppConf) -> Result<Report> {
+    let delete_date = Utc::now() - Duration::days(app_conf.delete_days);
+
+    let mut timeline = api_client.get_initial_timeline();
     timeline.reset();
     let mut total_removed: u32 = 0;
 
@@ -40,7 +41,7 @@ async fn delete_older_tweets(api: TwitterApi, delete_date: DateTime<Utc>) -> Res
 
         log::debug!("feed size = {}", feed.len());
 
-        let removed = process_feed(&api, &feed, &delete_date).await?;
+        let removed = process_feed(&api_client, &feed, &delete_date, &app_conf.ignore_liked_by_me).await?;
         log::debug!("Removed {} tweets", removed);
         total_removed += removed as u32;
 
@@ -52,14 +53,15 @@ async fn delete_older_tweets(api: TwitterApi, delete_date: DateTime<Utc>) -> Res
     Ok(Report::new(total_removed))
 }
 
-async fn process_feed(api: &TwitterApi, feed: &Vec<Tweet>, delete_date: &DateTime<Utc>) -> Result<usize> {
+async fn process_feed(api_client: &TwitterApi, feed: &Vec<Tweet>, delete_date: &DateTime<Utc>, ignore_liked_by_me: &bool) -> Result<usize> {
     let mut count: usize = 0;
     for tw in feed {
-        if tw.created_at <= *delete_date {
+        let liked_by_me = tw.favorited.unwrap_or(false);
+        if tw.created_at <= *delete_date && !(*ignore_liked_by_me && liked_by_me) {
             count += 1;
             log::debug!("Deleting {} -> {}", tw.id, tw.text);
             log::debug!("date = {}", tw.created_at);
-            api.delete_tweet(tw.id).await?;
+            api_client.delete_tweet(tw.id).await?;
         }
     }
     Ok(count)
